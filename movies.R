@@ -1,10 +1,7 @@
-##### Reading in Data, extracting interesting features ###
-library(dplyr)
-library(magrittr)
 library(ggplot2)
 
 movies<-read.csv("tmdb_5000_movies.csv")
-movies$release_date<-movies$release_date%>%as.Date()
+movies$release_date <- as.Date(movies$release_date)
 budget<-movies$budget
 revenue<-movies$revenue
 rating<-movies$vote_average
@@ -29,21 +26,14 @@ hist(non_horror$vote_average)
 mean(horror$vote_average)
 mean(non_horror$vote_average)
 
-
-##### plotting results ###
-y_name <- "rating"
-x_name <- "genregroup"
-
-##### Helper function to create data.frame for the chunk of the data ###
-prepare <- function(name, value, xname = x_name, yname = y_name) {
-  data_frame(rep(name, length(value)), value) %>%
-    set_colnames(c(xname, yname))
+combine <- function(group1, group2, name1, name2) {
+  return(data.frame(
+    genregroup=c(rep(name1, length(group1)), rep(name2, length(group2))),
+    rating=c(group1, group2)
+  ))
 }
 
-df<-bind_rows(
-  prepare("horror", horror$vote_average),
-  prepare("nonhorror", non_horror$vote_average)
-)
+df <- combine(horror$vote_average, non_horror$vote_average, "horror", "non_horror")
 
 ##### groupwise plotting ###
 ggplot(df, aes(rating, fill = genregroup)) + 
@@ -60,17 +50,14 @@ hm.test$p.value
 # but maybe that is because there are more low butget horror movies that fail in box office?
 # what happens if we only test the movies which generated a revenue over a certain threshold?
 
-
 ##### comparing successfull horror genre w/ non-horror ###
 successful_horror<-horror[horror$revenue>1000000,]
 successful_non_horror<-non_horror[non_horror$revenue>1000000,]
-mean(succesful_horror$vote_average)
-mean(succesful_non_horror$vote_average)
+mean(successful_horror$vote_average)
+mean(successful_non_horror$vote_average)
 
-dh<-bind_rows(
-  prepare("horror", successful_horror$vote_average),
-  prepare("nonamerican", successful_non_horror$vote_average)
-)
+dh <- combine(successful_horror$vote_average, successful_non_horror$vote_average, "horror", "non_horror")
+
 ggplot(dh, aes(rating, fill = genregroup)) + 
   geom_histogram(alpha = 0.5, aes(y = ..density..), position = 'identity', bins = 20)+
   ggtitle(paste("avg rating for genregroup (successful movies only)"))
@@ -90,10 +77,8 @@ mean(non_american$revenue)
 mean(american$vote_average)
 mean(non_american$vote_average)
 
-dg<-bind_rows(
-  prepare("american", american$vote_average),
-  prepare("nonamerican", non_american$vote_average)
-)
+dg <- combine(american$vote_average, non_american$vote_average, "american", "non_american")
+
 ggplot(dg, aes(rating, fill = genregroup)) + 
   geom_histogram(alpha = 0.5, aes(y = ..density..), position = 'identity', bins = 20)+
   ggtitle(paste("avg rating by production location"))
